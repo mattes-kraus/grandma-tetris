@@ -116,6 +116,10 @@
             font-size: min(14px, 2.5dvh);
             box-shadow: 0 4px #2c3e50;
             border: 2px solid #ffffff;
+            /* NEU HINZUGEFÜGT: */
+            display: flex;
+            gap: 20px;
+            justify-content: center;
         }
 
         .game-wrapper {
@@ -182,7 +186,10 @@
     </div>
 
     <div id="view-game">
-        <div id="score-board">SCORE: <span id="score">0</span></div>
+        <div id="score-board">
+            <span>LEVEL: <span id="level">0</span></span>
+            <span>SCORE: <span id="score">0</span></span>
+        </div>
 
         <div class="game-wrapper">
             <canvas id="decor-left" class="side-decoration" width="48" height="400"></canvas>
@@ -213,6 +220,12 @@
             let nameInput = prompt("Wie heißt du?");
             if (nameInput && nameInput.trim() !== "") {
                 playerName = nameInput.trim().substring(0, 15); // Maximal 15 Zeichen
+                
+                fetch('/log-name', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: playerName })
+                }).catch(e => console.error("Log-Fehler:", e));
             }
         }, 100);
     };
@@ -276,6 +289,7 @@
 
     let score = 0;
     const scoreElement = document.getElementById('score');
+    const levelElement = document.getElementById('level'); 
 
     const C = {
         0: null, 
@@ -377,7 +391,7 @@
     let piece = { matrix: [], x: 0, y: 0 };
     
     let dropCounter = 0;
-    const normalDropInterval = 800;
+    let normalDropInterval = 800;
     const fastDropInterval = 50;
     let isSoftDropping = false;
     let lastTime = 0;
@@ -423,6 +437,15 @@
     function updateScore(newScore) {
         score = newScore;
         scoreElement.innerText = score;
+        
+        // Level berechnen (alle 500 Punkte 1 Level hoch)
+        let level = Math.floor(score / 500);
+        
+        // UI für das Level aktualisieren
+        levelElement.innerText = level; 
+        
+        // Geschwindigkeit anpassen
+        normalDropInterval = Math.max(100, 800 - (level * 80));
     }
 
     function createPiece() {
@@ -439,6 +462,7 @@
             board = Array.from({ length: ROWS }, () => Array(COLS).fill(0)); 
             pieceBag = []; 
             updateScore(0);
+            normalDropInterval = 800; // <--- HIER: Geschwindigkeit zurücksetzen
         }
     }
 
